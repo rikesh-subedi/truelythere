@@ -1,0 +1,17 @@
+
+
+
+<div class="my-navbar wrapper">
+<div class="cell">
+
+<!-- <div class="app-name">Find.me</div> -->
+ <img class="app-logo-img" src="./css/img/applogo.png" class="">
+<div class="app-in-button">
+    <form name='myForm'>
+        <input class="srcBox" name = 'source' placeholder="Enter Destination" ng-model='dest_name' typeahead="place for place in places | filter:$viewValue | limitTo:8" required >
+        <!-- <input class="srcBox" name = 'destination' placeholder="Enter Destination" ng-model='dest_name' typeahead="place for place in places | filter:$viewValue | limitTo:8" required > -->
+        <a  class="go-btn" ng-click="goGet();">Go</a>
+        <div id="invalid-input"  class="error" ng-show="myForm.source.$error.pattern || myForm.destination.$error.pattern"></div>
+    </form>
+</div>
+</div></div>
