@@ -29,6 +29,7 @@ app.get('/', routes.index);
 app.post('/nearby', require('./routes/places').nearby);
 app.post('/details', require('./routes/places').details);
 app.post('/search', require('./routes/places').textSearch);
+app.post('/photo', require('./routes/places').getPhoto);
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   var err = new Error('Not Found');

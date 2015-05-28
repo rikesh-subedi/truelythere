@@ -40,6 +40,12 @@ var parameters_text_search = {
     "zagaselected": "",
 }
 
+var parameters_photo = {
+    "photoreference": "text",
+    "maxwidth": 400,
+    "maxheight": 400
+}
+
 var sendGetRequest = function(url, successCallback, errorCallback) {
     if (url.indexOf('https') > -1) {
         https.get(url, function(res) {
@@ -48,10 +54,11 @@ var sendGetRequest = function(url, successCallback, errorCallback) {
                 data += chunk;
             });
             res.on('end', function() {
-                successCallback(data);
+                successCallback(data, res);
+
             });
         }).on('error', function(error) {
-            errorCallback(error);
+            errorCallback(error, res);
         });
 
     }
@@ -84,7 +91,9 @@ exports.details = function(request, response) {
     var successCallback = function(data) {
         //res.setStatusCode(200);
         response.setHeader('content-type', 'application/json');
-        response.send(data);
+        // response.send(data);
+        console.log("details call fetched...");
+        SendWithPhotosForPlace(data, response);
     };
     var errorCallback = function(error) {
         response.statusCode = 404;
@@ -100,11 +109,12 @@ exports.textSearch = function(request, response) {
     finalParameters.key = api_key;
     url = url.replace("{PARAMETERS}", queryString.stringify(finalParameters));
     console.log(url);
-    var successCallback = function(data){
+    var successCallback = function(data) {
         response.setHeader('content-type', 'application/json');
         response.send(data);
+
     }
-    var errorCallback = function(error){
+    var errorCallback = function(error) {
         response.statusCode = 404;
         response.send(error);
     }
@@ -112,4 +122,69 @@ exports.textSearch = function(request, response) {
     sendGetRequest(url, successCallback, errorCallback);
 
 
+}
+var SendWithPhotosForPlace = function(placeDetailsData, placeDetailsResponse) {
+    console.log("sending with phots links");
+    var url = "https://maps.googleapis.com/maps/api/place/photo?{PARAMETERS}";
+    var sync_counter = 0;
+    var placedata = JSON.parse(placeDetailsData);
+    if (placedata.result && placedata.result.photos && Array.isArray(placedata.result.photos)) {
+        placedata.result.photos.forEach(function(d, i) {
+            var mUrl = url.replace('{PARAMETERS}', "photoreference=" + d.photo_reference + "&maxwidth=400" + "&key=" + api_key);
+            console.log(mUrl);
+            var successCallback = function(data, res) {
+                sync_counter--;
+                d.image_url = res.headers.location;
+                console.log(d.image_url);
+                if (sync_counter === 0) {
+                    placeDetailsResponse.send(placedata);
+                }
+
+            }
+            var failureCallback = function(error, res) {
+                sync_counter--;
+                if (sync_counter === 0) {
+                    placeDetailsResponse.send(placedata);
+                }
+            }
+            sync_counter++;
+            sendGetRequest(mUrl, successCallback, failureCallback)
+        })
+    } else {
+        placeDetailsResponse.send(placeDetailsData);
+    }
+
+}
+exports.getPhoto = function(request, response) {
+    console.log('inside get photo');
+    var url = "https://maps.googleapis.com/maps/api/place/photo?{PARAMETERS}";
+    var finalParameters = request.body;
+    finalParameters.key = api_key;
+    url = url.replace("{PARAMETERS}", queryString.stringify(finalParameters));
+    console.log(url);
+    var successCallback = function(data, res) {
+        //console.log(res.headers);
+        //response.setHeader('content-type', 'text/html');
+        console.log("inside first sucess callback got location url")
+        var scb = function(data, res) {
+            console.log("inside second success callback got data");
+            console.log(res.headers["content-type"]);
+            response.setHeader('content-type', res.headers["content-type"]);
+            console.log(data);
+            response.send(data);
+        }
+        var fcb = function(error, res) {
+            console.log(error);
+        }
+        var image_url = res.headers.location;
+        console.log(image_url);
+        //sendGetRequest(image_url, scb, fcb);
+        response.send(image_url);
+    }
+    var errorCallback = function(error) {
+        response.statusCode = 404;
+        response.send(error);
+    }
+
+    sendGetRequest(url, successCallback, errorCallback);
 }
