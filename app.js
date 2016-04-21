@@ -2,8 +2,6 @@
 //added a one line comment
 
 //added one more line
-
-//added third line
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
